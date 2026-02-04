@@ -1,0 +1,7 @@
+fal-client
+pydantic>=2
+python-dotenv
+pyyaml
+loguru
+tenacity
+httpx

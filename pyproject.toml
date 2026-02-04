@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "video-benchmark-pipeline"
+version = "0.1.0"
+requires-python = ">=3.10"
+
+dependencies = [
+    "fal-client",
+    "pydantic>=2",
+    "python-dotenv",
+    "pyyaml",
+    "loguru",
+    "tenacity",
+    "httpx",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
