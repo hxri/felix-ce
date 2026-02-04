@@ -127,7 +127,7 @@ This project automates the creation of high-quality product/fashion videos by:
 
 1. **Clone and navigate:**
    ```bash
-   cd /home/hxri/Documents/conscious/felix
+   cd felix
    ```
 
 2. **Create virtual environment (optional):**
@@ -138,7 +138,7 @@ This project automates the creation of high-quality product/fashion videos by:
 
 3. **Install dependencies:**
    ```bash
-   pip install -r requirements.txt
+   python3 -m pip install -e .
    ```
 
 4. **Set FAL API key:**
