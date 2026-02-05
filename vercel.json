@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "app/backend/wsgi.py",
+      "use": "@vercel/python",
+      "config": {
+        "runtime": "python3.11",
+        "maxDuration": 900
+      }
+    },
+    {
+      "src": "app/frontend/package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "app/backend/wsgi.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "app/frontend"
+    }
+  ],
+  "env": {
+    "NEXT_PUBLIC_API_URL": "@api_url"
+  }
+}

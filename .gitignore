@@ -2,3 +2,6 @@ build/
 outputs/
 assets/
 .env
+*__pycache__*
+*.next*
+*node_modules*

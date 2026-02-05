@@ -12,7 +12,7 @@ from src.utils.image_encoding import local_image_to_data_uri
 class KlingVideoService:
     """Video generation using FAL's Kling video model."""
 
-    MODEL_NAME = "fal-ai/kling-video/v2.6/pro/image-to-video"
+    MODEL_NAME = "fal-ai/kling-video/o3/pro/image-to-video" # "fal-ai/kling-video/v2.6/pro/image-to-video"
 
     def __init__(self):
         self.client = FalClient()

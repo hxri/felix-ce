@@ -51,7 +51,7 @@ def main():
     # ============================================================
     # VIDEO GENERATION
     # ============================================================
-    video_pipeline = VideoPipeline(video_model="hunyuan")
+    video_pipeline = VideoPipeline(video_model="grok")
 
     print("\n===== VIDEO GENERATION STAGE =====")
     video_result = video_pipeline.run(

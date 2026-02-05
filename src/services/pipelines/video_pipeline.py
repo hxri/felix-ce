@@ -46,8 +46,10 @@ class VideoPipeline:
     def run(
         self,
         reference_image: str,
-        apparel_description: str = "",
-        duration_sec: int = 4,
+        apparel_description: str,
+        motion_description: str,
+        duration_sec: int,
+        no_download: bool = False,
     ) -> dict:
         """
         Generate a video of the person in the reference image.
@@ -55,14 +57,19 @@ class VideoPipeline:
         Args:
             reference_image: Path or URL to the generated person image.
             apparel_description: Description of the outfit (e.g., "wearing blue shirt and khaki shorts").
+            motion_description: Description of the person's motion/action (e.g., "turns around smiling").
             duration_sec: Video duration in seconds (default: 4).
 
         Returns:
             dict with keys: raw, local_files, metadata_file, latency_sec
         """
 
+        # Build comprehensive prompt with motion description
         prompt = (
-            f"A guy standing in a proper lighting. He is standing straight facing the camera without talking and then slowly turning around and giving a demo of the outfit. Everything in realtime."
+            f"A professional video of a person in a realistic setting. "
+            f"Outfit: {apparel_description}. "
+            f"Motion: {motion_description} "
+            f"Professional lighting, clear video quality, smooth motion, no talking."
         )
 
         req = VideoGenerationRequest(
@@ -73,5 +80,6 @@ class VideoPipeline:
         )
 
         print(f"[VideoPipeline] Generating video using {self.video_model}...")
-        result = self.video_service.generate_video(req)
+        print(f"  Motion: {motion_description[:60]}...")
+        result = self.video_service.generate_video(req, no_download=no_download)
         return {"stage": "video", "video_model": self.video_model, **result}

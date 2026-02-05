@@ -24,7 +24,7 @@ class GrokVideoService:
         else:
             return local_image_to_data_uri(ref)
 
-    def generate_video(self, req: VideoGenerationRequest) -> dict:
+    def generate_video(self, req: VideoGenerationRequest, no_download: bool = False) -> dict:
         start_time = time.time()
 
         # Resolve reference image
@@ -46,27 +46,29 @@ class GrokVideoService:
         latency = time.time() - start_time
 
         # -----------------------
-        # Save videos locally
+        # Save videos locally (optional)
         # -----------------------
         saved_files = []
-        today = datetime.now().strftime("%Y_%m_%d")
-        ts = int(time.time())
+        
+        if not no_download:
+            today = datetime.now().strftime("%Y_%m_%d")
+            ts = int(time.time())
 
-        base_dir = Path(f"outputs/videos/{today}/grok")
-        base_dir.mkdir(parents=True, exist_ok=True)
+            base_dir = Path(f"outputs/videos/{today}/grok")
+            base_dir.mkdir(parents=True, exist_ok=True)
 
-        # FAL Grok returns result["video"]["url"]
-        video_obj = result.get("video")
-        if video_obj:
-            url = video_obj.get("url")
-            if not url:
-                raise ValueError("No URL in video response")
-            save_path = base_dir / f"video_{ts}.mp4"
-            print(f"[GrokService] Downloading video to {save_path}...")
-            download_file(url, save_path)
-            saved_files.append(str(save_path))
-        else:
-            raise ValueError(f"No video in response. Keys: {result.keys()}")
+            # FAL Grok returns result["video"]["url"]
+            video_obj = result.get("video")
+            if video_obj:
+                url = video_obj.get("url")
+                if not url:
+                    raise ValueError("No URL in video response")
+                save_path = base_dir / f"video_{ts}.mp4"
+                print(f"[GrokService] Downloading video to {save_path}...")
+                download_file(url, save_path)
+                saved_files.append(str(save_path))
+            else:
+                raise ValueError(f"No video in response. Keys: {result.keys()}")
 
         # -----------------------
         # Save metadata JSON
@@ -80,13 +82,18 @@ class GrokVideoService:
             "raw_response": result,
         }
 
-        meta_path = base_dir / f"meta_{ts}.json"
-        with open(meta_path, "w") as f:
-            json.dump(metadata, f, indent=2, default=str)
+        meta_path = None
+        if not no_download:
+            today = datetime.now().strftime("%Y_%m_%d")
+            ts = int(time.time())
+            base_dir = Path(f"outputs/videos/{today}/grok")
+            meta_path = base_dir / f"meta_{ts}.json"
+            with open(meta_path, "w") as f:
+                json.dump(metadata, f, indent=2, default=str)
 
         return {
-            "raw": result,
+            "raw_response": result,
             "local_files": saved_files,
-            "metadata_file": str(meta_path),
+            "metadata_file": str(meta_path) if meta_path else None,
             "latency_sec": latency,
         }
