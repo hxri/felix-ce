@@ -14,7 +14,7 @@ OUTFIT_DATABASE = {
     'Running Shorts': 'https://i.postimg.cc/bJG7cfcx/running_shorts.png',
     
     # Backgrounds (descriptions, not images)
-    'Urban Cafe': 'Urban cafe outdoor with modern city background',
+    'Urban Cafe': 'Urban cafe outdoor with modern city background.',
     'Office': 'Modern office interior with office chairs nearby',
     'Gym': 'Gym or outdoor fitness setting',
     'Studio': 'Clean professional studio with neutral background',
