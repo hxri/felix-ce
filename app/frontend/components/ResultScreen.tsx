@@ -3,15 +3,15 @@
 import { useState } from 'react';
 
 interface ResultScreenProps {
+  image: string;
   video: string;
   onRestart: () => void;
 }
 
-export default function ResultScreen({ video, onRestart }: ResultScreenProps) {
+export default function ResultScreen({ image, video, onRestart }: ResultScreenProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string>('');
 
-  // Video URL is already the FAL CDN URL
   const videoUrl = video;
 
   const handleSave = async () => {
@@ -52,6 +52,17 @@ export default function ResultScreen({ video, onRestart }: ResultScreenProps) {
         {error && (
           <div className="bg-red-900 text-red-100 p-4 rounded-lg mb-4 border border-red-700">
             <p className="text-sm">{error}</p>
+          </div>
+        )}
+
+        {image && (
+          <div className="mb-4">
+            <p className="text-slate-300 text-sm mb-2">Generated Outfit:</p>
+            <img 
+              src={image} 
+              alt="Generated outfit" 
+              className="w-full rounded-lg bg-slate-700 aspect-square object-cover"
+            />
           </div>
         )}
 

@@ -5,3 +5,5 @@ assets/
 *__pycache__*
 *.next*
 *node_modules*
+.vercel
+.env*.local

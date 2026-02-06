@@ -172,7 +172,11 @@ export default function Home() {
       {step === 'select' && <SelectScreen onSelect={handleSelect} />}
       {step === 'loading' && <LoadingScreen message={loadingMessage} />}
       {step === 'result' && (
-        <ResultScreen video={generatedVideo} onRestart={handleRestart} />
+        <ResultScreen 
+          image={generatedImage}
+          video={generatedVideo} 
+          onRestart={handleRestart} 
+        />
       )}
     </div>
   );
