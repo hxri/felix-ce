@@ -14,17 +14,13 @@
       "use": "@vercel/next"
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "app/backend/wsgi.py"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "app/frontend"
+      "source": "/api/(.*)",
+      "destination": "/app/backend/wsgi.py"
     }
   ],
   "env": {
-    "NEXT_PUBLIC_API_URL": "https://felix-ce.vercel.app"
+    "NEXT_PUBLIC_API_URL": "https://felix-ce.vercel.app/"
   }
 }
