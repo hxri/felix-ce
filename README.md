@@ -39,28 +39,59 @@ This project automates the creation of high-quality product/fashion videos by:
 
 ## 🏗️ Architecture
 
-```mermaid
-graph TD
-    User[User / Web App] --> API[Flask API (backend)]
-    API --> ImagePipe[ImagePipeline]
-    API --> VideoPipe[VideoPipeline]
-
-    subgraph "Image Generation"
-        ImagePipe -->|Reference + Prompt| FalImage[FAL.ai: nano-banana/edit]
-        FalImage -->|Generated Image| LocalImg[outputs/images/...]
-    end
-
-    subgraph "Video Generation (Factory)"
-        VideoPipe -->|Adapter Selection| Adapter{Model Adapter}
-        Adapter -->|Veo3| M1[Veo3 Service]
-        Adapter -->|Kling| M2[Kling Service]
-        Adapter -->|Luma| M3[Luma Service]
-        Adapter -->|Grok| M4[Grok Service]
-        Adapter -->|...| M5[Other Services]
-    end
-
-    M1 & M2 & M3 & M4 -->|Video URL| Output[outputs/videos/...]
-    Output --> Dashboard[Streamlit Dashboard]
+```
+┌─────────────────────────────────────────────────────┐
+│         Person + Environment Attributes             │
+│        (PersonAttributes, EnvironmentAttributes)    │
+└────────────────────┬────────────────────────────────┘
+                     │
+                     ▼
+        ┌────────────────────────┐
+        │   Image Pipeline       │
+        │  (ImagePipeline)       │
+        │  ─────────────────     │
+        │ • Prompt building      │
+        │ • nano-banana/edit     │
+        │ • Face preservation    │
+        └────────────┬───────────┘
+                     │
+        ┌────────────▼─────────────┐
+        │  Generated Person Image  │
+        │  (outputs/images/...)    │
+        └────────────┬─────────────┘
+                     │
+                     ▼
+        ┌────────────────────────┐
+        │  Video Pipeline        │
+        │ (VideoPipeline)        │
+        │ ─────────────────────  │
+        │ • Model factory        │
+        │ • Video service calls  │
+        │ • Metadata logging     │
+        └────────────┬───────────┘
+                     │
+        ┌────────────▼──────────────────────────┐
+        │  Video Generation (8 Models)          │
+        │  ────────────────────────────────     │
+        │  • veo3    • ltx      • kling         │
+        │  • grok    • luma     • pika          │
+        │  • seedance • hunyuan                 │
+        └────────────┬──────────────────────────┘
+                     │
+        ┌────────────▼──────────────────┐
+        │   Output Videos + Metadata    │
+        │ (outputs/videos/YYYY_MM_DD/)  │
+        └────────────┬──────────────────┘
+                     │
+                     ▼
+        ┌────────────────────────┐
+        │  Dashboard (Streamlit) │
+        │  ───────────────────── │
+        │ • Latency comparison   │
+        │ • Model benchmarking   │
+        │ • Video preview        │
+        │ • Export reports       │
+        └────────────────────────┘
 ```
 
 ---
