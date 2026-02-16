@@ -14,25 +14,30 @@ export default function CaptureScreen({ onCapture }: CaptureScreenProps) {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [debugInfo, setDebugInfo] = useState<string>('');
   const [cameraStarted, setCameraStarted] = useState(false);
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
 
-  const startCamera = async () => {
+  const startCamera = async (mode: 'user' | 'environment' = facingMode) => {
     try {
       setError('');
       setDebugInfo('Requesting camera access...');
-      setCameraStarted(true); // Show video element immediately
+      setCameraStarted(true);
       
-      // Request camera permissions
+      // Stop existing stream if any
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { 
-          facingMode: 'user'
+          facingMode: mode
         },
         audio: false
       });
 
       setDebugInfo(`Camera stream obtained. Video tracks: ${mediaStream.getVideoTracks().length}`);
       setStream(mediaStream);
+      setFacingMode(mode);
 
-      // Delay to ensure videoRef is ready after render
       setTimeout(() => {
         if (videoRef.current) {
           videoRef.current.srcObject = mediaStream;
@@ -76,6 +81,11 @@ export default function CaptureScreen({ onCapture }: CaptureScreenProps) {
     }
   };
 
+  const toggleCamera = async () => {
+    const newMode = facingMode === 'user' ? 'environment' : 'user';
+    await startCamera(newMode);
+  };
+
   const stopCamera = () => {
     if (stream) {
       stream.getTracks().forEach(track => {
@@ -107,30 +117,24 @@ export default function CaptureScreen({ onCapture }: CaptureScreenProps) {
     try {
       const video = videoRef.current;
       
-      // Ensure video dimensions are available
       if (video.videoWidth === 0 || video.videoHeight === 0) {
         setError('Video dimensions not available');
         return;
       }
 
-      // Set canvas dimensions to match video
       canvasRef.current.width = video.videoWidth;
       canvasRef.current.height = video.videoHeight;
 
       setDebugInfo(`Capturing at ${canvasRef.current.width}x${canvasRef.current.height}`);
 
-      // Draw video frame to canvas
       ctx.drawImage(video, 0, 0);
       
-      // Convert to base64 JPEG
       const imageData = canvasRef.current.toDataURL('image/jpeg', 0.95);
       
       setDebugInfo('Photo captured successfully');
       
-      // Stop camera
       stopCamera();
       
-      // Send to parent
       onCapture(imageData);
     } catch (err) {
       setError(`Failed to capture photo: ${err instanceof Error ? err.message : 'Unknown error'}`);
@@ -138,7 +142,6 @@ export default function CaptureScreen({ onCapture }: CaptureScreenProps) {
     }
   };
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (stream) {
@@ -173,7 +176,7 @@ export default function CaptureScreen({ onCapture }: CaptureScreenProps) {
           </div>
         )}
 
-        {/* VIDEO ELEMENT ALWAYS EXISTS (not conditional) */}
+        {/* VIDEO ELEMENT WITH CAMERA TOGGLE */}
         <div className={`relative mb-6 rounded-lg overflow-hidden border-4 shadow-lg ${
           cameraStarted ? 'border-blue-500 bg-black' : 'hidden'
         }`}>
@@ -189,6 +192,18 @@ export default function CaptureScreen({ onCapture }: CaptureScreenProps) {
               display: 'block'
             }}
           />
+          
+          {/* CAMERA TOGGLE BUTTON - TOP RIGHT CORNER */}
+          {cameraStarted && isCameraActive && (
+            <button
+              onClick={toggleCamera}
+              className="absolute top-3 right-3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-lg transition shadow-lg z-10"
+              title={`Switch to ${facingMode === 'user' ? 'back' : 'front'} camera`}
+            >
+              🔄
+            </button>
+          )}
+          
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="w-3/4 h-full border-2 border-dashed border-blue-400 opacity-30" />
           </div>
@@ -220,7 +235,7 @@ export default function CaptureScreen({ onCapture }: CaptureScreenProps) {
 
         {!cameraStarted && (
           <button
-            onClick={startCamera}
+            onClick={() => startCamera()}
             className="w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-bold py-3 px-6 rounded-lg transition"
           >
             🎥 Start Camera

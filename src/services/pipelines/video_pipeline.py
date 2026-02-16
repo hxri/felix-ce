@@ -49,6 +49,7 @@ class VideoPipeline:
         apparel_description: str,
         motion_description: str,
         duration_sec: int,
+        gender: str = "male",
         no_download: bool = False,
     ) -> dict:
         """
@@ -59,17 +60,22 @@ class VideoPipeline:
             apparel_description: Description of the outfit (e.g., "wearing blue shirt and khaki shorts").
             motion_description: Description of the person's motion/action (e.g., "turns around smiling").
             duration_sec: Video duration in seconds (default: 4).
+            gender: Gender for personalized prompts ('male' or 'female').
+            no_download: Whether to skip local file downloads.
 
         Returns:
-            dict with keys: raw, local_files, metadata_file, latency_sec
+            dict with keys: raw_response, local_files, metadata_file, latency_sec
         """
 
         # Build comprehensive prompt with motion description
         prompt = (
-            f"A professional video of a person in a realistic setting. "
+            f"A professional video of a {gender} in a realistic setting. "
             f"Outfit: {apparel_description}. "
             f"Motion: {motion_description} "
-            f"Professional lighting, clear video quality, smooth motion, no talking."
+            f"Professional lighting, clear video quality, smooth motion, no talking. "
+            f"IMPORTANT: Person keeps hands at sides or in natural resting position. "
+            f"NO touching, adjusting, lifting, or moving any clothing. "
+            f"Simply turning around to display the outfit."
         )
 
         req = VideoGenerationRequest(
@@ -80,6 +86,7 @@ class VideoPipeline:
         )
 
         print(f"[VideoPipeline] Generating video using {self.video_model}...")
+        print(f"  Gender: {gender}")
         print(f"  Motion: {motion_description[:60]}...")
         result = self.video_service.generate_video(req, no_download=no_download)
         return {"stage": "video", "video_model": self.video_model, **result}

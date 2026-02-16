@@ -38,80 +38,110 @@ def generate_image():
         from src.schemas.person import PersonAttributes
         from src.schemas.environment import EnvironmentAttributes
         
-        # Get actual outfit images from database
-        outfit_top_name = data.get('outfit_top', 'casual')
-        outfit_bottom_name = data.get('outfit_bottom', 'casual')
-        
-        outfit_top_image = get_outfit_image(outfit_top_name)
-        outfit_bottom_image = get_outfit_image(outfit_bottom_name)
-        
-        print(f"[GENERATE] Top: {outfit_top_name} -> {outfit_top_image}")
-        print(f"[GENERATE] Bottom: {outfit_bottom_name} -> {outfit_bottom_image}")
-        
-        JOB_STORE[job_id] = {
-            "status": "processing",
-            "created_at": datetime.now().isoformat(),
-            "data": data
-        }
-        
         try:
             pipeline = ImagePipeline()
-            result = pipeline.run(
-                person=PersonAttributes(height_cm=175, weight_kg=85, gender="male", age=26),
-                env=EnvironmentAttributes(
-                    apparel_type=f"{outfit_top_name} with {outfit_bottom_name}",
-                    inferred_setting=data.get('background', 'studio'),
-                    visual_cues=data.get('environment', 'professional lighting')
-                ),
-                description="Full body portrait",
-                person_reference_image=data['person_image'],
-                outfit_reference_images=[outfit_top_image, outfit_bottom_image],
-                no_download=data.get('no_download', False),
-            )
+            gender = data.get('gender', 'male')
             
-            print(f"[GENERATE] Full result keys: {result.keys()}")
+            # Get outfit pieces
+            outfit_top_name = data.get('outfit_top', 'casual')
+            outfit_bottom_name = data.get('outfit_bottom', 'casual')
             
-            # Extract image URL directly from FAL response
-            image_url = None
+            # Handle full dresses - if one is empty, use only the other
+            if not outfit_top_name or outfit_top_name == '':
+                apparel_type = outfit_bottom_name
+                outfit_top_image = get_outfit_image(outfit_bottom_name)
+                outfit_bottom_image = ''
+            elif not outfit_bottom_name or outfit_bottom_name == '':
+                apparel_type = outfit_top_name
+                outfit_top_image = get_outfit_image(outfit_top_name)
+                outfit_bottom_image = ''
+            else:
+                apparel_type = f"{outfit_top_name} with {outfit_bottom_name}"
+                outfit_top_image = get_outfit_image(outfit_top_name)
+                outfit_bottom_image = get_outfit_image(outfit_bottom_name)
             
-            if result.get('raw_response', {}).get('images', []):
-                image_url = result['raw_response']['images'][0].get('url')
-                print(f"[GENERATE] Extracted FAL URL: {image_url}")
+            print(f"[GENERATE] Top: {outfit_top_name} -> {outfit_top_image}")
+            print(f"[GENERATE] Bottom: {outfit_bottom_name} -> {outfit_bottom_image}")
+            print(f"[GENERATE] Apparel Type: {apparel_type}")
             
-            if not image_url:
-                print(f"[GENERATE] ERROR: Could not extract image URL")
-                print(f"[GENERATE] Result structure: {json.dumps(result, indent=2, default=str)}")
-                raise ValueError("Could not extract image URL from FAL response")
+            JOB_STORE[job_id] = {
+                "status": "processing",
+                "created_at": datetime.now().isoformat(),
+                "data": data
+            }
             
-            JOB_STORE[job_id].update({
-                "status": "completed",
-                "image_file": image_url,
-                "latency_sec": result.get('latency_sec', 0)
-            })
-            
-            print(f"[GENERATE] Success: {image_url}")
-            
+            try:
+                pipeline = ImagePipeline()
+                
+                # Build reference images list - only include non-empty ones
+                outfit_refs = []
+                if outfit_top_image:
+                    outfit_refs.append(outfit_top_image)
+                if outfit_bottom_image:
+                    outfit_refs.append(outfit_bottom_image)
+                
+                result = pipeline.run(
+                    person=PersonAttributes(
+                        height_cm=175, 
+                        weight_kg=85, 
+                        gender=gender,
+                        age=26
+                    ),
+                    env=EnvironmentAttributes(
+                        apparel_type=apparel_type,
+                        inferred_setting=data.get('background', 'studio'),
+                        visual_cues=data.get('environment', 'professional lighting')
+                    ),
+                    description=f"Full body portrait of a {gender} wearing {apparel_type}",
+                    person_reference_image=data['person_image'],
+                    outfit_reference_images=outfit_refs,
+                    no_download=data.get('no_download', False),
+                )
+                
+                print(f"[GENERATE] Full result keys: {result.keys()}")
+                
+                # Extract image URL directly from FAL response
+                image_url = None
+                
+                if result.get('raw_response', {}).get('images', []):
+                    image_url = result['raw_response']['images'][0].get('url')
+                    print(f"[GENERATE] Extracted FAL URL: {image_url}")
+                
+                if not image_url:
+                    print(f"[GENERATE] ERROR: Could not extract image URL")
+                    print(f"[GENERATE] Result structure: {json.dumps(result, indent=2, default=str)}")
+                    raise ValueError("Could not extract image URL from FAL response")
+                
+                JOB_STORE[job_id].update({
+                    "status": "completed",
+                    "image_file": image_url,
+                    "latency_sec": result.get('latency_sec', 0)
+                })
+                
+                print(f"[GENERATE] Success: {image_url}")
+                return jsonify({"job_id": job_id, "status": "processing"}), 202
+                
+            except Exception as e:
+                JOB_STORE[job_id].update({
+                    "status": "failed",
+                    "error": str(e)
+                })
+                print(f"[GENERATE] Pipeline error: {e}")
+                import traceback
+                traceback.print_exc()
+                raise
+        
         except Exception as e:
-            JOB_STORE[job_id].update({
-                "status": "failed",
-                "error": str(e)
-            })
-            print(f"[GENERATE] Pipeline error: {e}")
+            print(f"[GENERATE] Error: {e}")
             import traceback
             traceback.print_exc()
-            raise
-        
-        return jsonify({
-            "job_id": job_id,
-            "status": "processing",
-            "message": "Image generation started"
-        }), 202
+            return jsonify({"error": str(e)}), 500
     
     except Exception as e:
-        print(f"[GENERATE] Error: {e}")
+        print(f"[GENERATE] Outer error: {e}")
         import traceback
         traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @generate_bp.route('/api/status/<job_id>', methods=['GET'])

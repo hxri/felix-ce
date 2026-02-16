@@ -45,55 +45,21 @@ class GrokVideoService:
 
         latency = time.time() - start_time
 
-        # -----------------------
-        # Save videos locally (optional)
-        # -----------------------
+        # On Vercel, we can't write to disk - just use FAL CDN URLs
         saved_files = []
         
-        if not no_download:
-            today = datetime.now().strftime("%Y_%m_%d")
-            ts = int(time.time())
-
-            base_dir = Path(f"outputs/videos/{today}/grok")
-            base_dir.mkdir(parents=True, exist_ok=True)
-
-            # FAL Grok returns result["video"]["url"]
-            video_obj = result.get("video")
-            if video_obj:
-                url = video_obj.get("url")
-                if not url:
-                    raise ValueError("No URL in video response")
-                save_path = base_dir / f"video_{ts}.mp4"
-                print(f"[GrokService] Downloading video to {save_path}...")
-                download_file(url, save_path)
-                saved_files.append(str(save_path))
-            else:
-                raise ValueError(f"No video in response. Keys: {result.keys()}")
-
-        # -----------------------
-        # Save metadata JSON
-        # -----------------------
-        metadata = {
-            "prompt": req.prompt,
-            "model": self.MODEL_NAME,
-            "reference_image": req.reference_image,
-            "latency_sec": latency,
-            "timestamp": datetime.utcnow().isoformat(),
-            "raw_response": result,
-        }
-
-        meta_path = None
-        if not no_download:
-            today = datetime.now().strftime("%Y_%m_%d")
-            ts = int(time.time())
-            base_dir = Path(f"outputs/videos/{today}/grok")
-            meta_path = base_dir / f"meta_{ts}.json"
-            with open(meta_path, "w") as f:
-                json.dump(metadata, f, indent=2, default=str)
+        # Extract FAL video URL from response
+        video_url = None
+        if result.get("video", {}).get("url"):
+            video_url = result["video"]["url"]
+            print(f"[GrokService] Got FAL video URL: {video_url}")
+        
+        if video_url:
+            saved_files = [video_url]  # Use FAL URL as the "file"
 
         return {
             "raw_response": result,
             "local_files": saved_files,
-            "metadata_file": str(meta_path) if meta_path else None,
+            "metadata_file": None,
             "latency_sec": latency,
         }

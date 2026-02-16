@@ -107,62 +107,21 @@ class FluxProEditService:
 
         latency = time.time() - start_time
 
-        # -----------------------
-        # Save images locally (optional)
-        # -----------------------
+        # On Vercel, we can't write to disk - just use FAL CDN URLs
         saved_files = []
         
-        if not no_download:
-            today = datetime.now().strftime("%Y_%m_%d")
-            ts = int(time.time())
-
-            base_dir = Path(f"outputs/images/{today}/flux_pro_edit")
-            base_dir.mkdir(parents=True, exist_ok=True)
-
-            # Flux returns result["image"]["url"]
-            image_obj = result.get("image")
-            if image_obj:
-                url = image_obj.get("url")
-                if url:
-                    save_path = base_dir / f"img_{ts}.png"
-                    print(f"[FluxProEditService] Downloading image to {save_path}...")
-                    download_file(url, save_path)
-                    saved_files.append(str(save_path))
-            else:
-                # Fallback: check for images array
-                for idx, img in enumerate(result.get("images", [])):
-                    url = img.get("url")
-                    if not url:
-                        continue
-                    save_path = base_dir / f"img_{ts}_{idx}.png"
-                    download_file(url, save_path)
-                    saved_files.append(str(save_path))
-
-        # -----------------------
-        # Save metadata JSON
-        # -----------------------
-        metadata = {
-            "prompt": req.prompt,
-            "model": self.MODEL_NAME,
-            "resolution": req.resolution,
-            "latency_sec": latency,
-            "timestamp": datetime.utcnow().isoformat(),
-            "reference_images": req.reference_images,
-            "raw_response": result,
-        }
-
-        meta_path = None
-        if not no_download:
-            today = datetime.now().strftime("%Y_%m_%d")
-            ts = int(time.time())
-            base_dir = Path(f"outputs/images/{today}/flux_pro_edit")
-            meta_path = base_dir / f"meta_{ts}.json"
-            with open(meta_path, "w") as f:
-                json.dump(metadata, f, indent=2, default=str)
+        # Extract FAL image URL from response
+        image_url = None
+        if result.get("image", {}).get("url"):
+            image_url = result["image"]["url"]
+            print(f"[FluxProEditService] Got FAL image URL: {image_url}")
+        
+        if image_url:
+            saved_files = [image_url]  # Use FAL URL as the "file"
 
         return {
             "raw_response": result,
             "local_files": saved_files,
-            "metadata_file": str(meta_path) if meta_path else None,
+            "metadata_file": None,
             "latency_sec": latency,
         }

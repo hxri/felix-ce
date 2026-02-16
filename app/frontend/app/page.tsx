@@ -2,28 +2,34 @@
 
 import { useState } from 'react';
 import CaptureScreen from '@/components/CaptureScreen';
+import GenderScreen from '@/components/GenderScreen';
 import SelectScreen from '@/components/SelectScreen';
 import LoadingScreen from '@/components/LoadingScreen';
 import ResultScreen from '@/components/ResultScreen';
 
-type Step = 'capture' | 'select' | 'loading' | 'result';
+type Step = 'capture' | 'gender' | 'select' | 'loading' | 'result';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 export default function Home() {
   const [step, setStep] = useState<Step>('capture');
+  const [gender, setGender] = useState<'male' | 'female'>('male');
   const [personImage, setPersonImage] = useState<string>('');
   const [selections, setSelections] = useState({
     top: '',
     bottom: '',
     background: ''
   });
-  const [generatedImage, setGeneratedImage] = useState<string>('');
   const [generatedVideo, setGeneratedVideo] = useState<string>('');
   const [loadingMessage, setLoadingMessage] = useState<string>('Generating your content...');
 
   const handleCapture = (image: string) => {
     setPersonImage(image);
+    setStep('gender');
+  };
+
+  const handleGenderSelect = (selectedGender: 'male' | 'female') => {
+    setGender(selectedGender);
     setStep('select');
   };
 
@@ -38,14 +44,32 @@ export default function Home() {
       setLoadingMessage('Creating photorealistic portrait...');
       
       console.log('API_BASE_URL:', API_BASE_URL);
+      
+      // Handle full dresses - if Formal Dress or Summer Dress is selected, use only that
+      let outfit_top = selected.top;
+      let outfit_bottom = selected.bottom;
+      let apparel_type = `${outfit_top} with ${outfit_bottom}`;
+      
+      if (gender === 'female') {
+        if (selected.top === 'Formal Dress') {
+          outfit_bottom = '';
+          apparel_type = 'Formal Dress';
+        } else if (selected.bottom === 'Summer Dress') {
+          outfit_top = '';
+          apparel_type = 'Summer Dress';
+        }
+      }
+      
       console.log('Generating with:', {
-        outfit_top: selected.top,
-        outfit_bottom: selected.bottom,
+        gender: gender,
+        outfit_top: outfit_top,
+        outfit_bottom: outfit_bottom,
+        apparel_type: apparel_type,
         background: selected.background
       });
 
       // Generate image
-      const generateUrl = `${API_BASE_URL}/api/generate`;
+      const generateUrl = '/api/generate';
       console.log('POST to:', generateUrl);
       
       const imgRes = await fetch(generateUrl, {
@@ -53,8 +77,9 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           person_image: personImage,
-          outfit_top: selected.top,
-          outfit_bottom: selected.bottom,
+          gender: gender,
+          outfit_top: outfit_top,
+          outfit_bottom: outfit_bottom,
           background: selected.background,
           environment: 'professional lighting, studio'
         })
@@ -74,11 +99,10 @@ export default function Home() {
       const imageFile = await pollJobStatus(imgJob.job_id, `${API_BASE_URL}/api/status`, 'Creating...');
       
       console.log('Generated image file:', imageFile);
-      setGeneratedImage(imageFile);
       setLoadingMessage('Generating video animation...');
 
-      // Generate video
-      const videoUrl = `${API_BASE_URL}/api/video`;
+      // Generate video with gender parameter
+      const videoUrl = '/api/video';
       console.log('POST to:', videoUrl);
       
       const vidRes = await fetch(videoUrl, {
@@ -86,9 +110,12 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           image_file: imageFile,
+          gender: gender,
           outfit_top: selected.top,
           outfit_bottom: selected.bottom,
-          motion_description: 'person turns around smiling and demonstrates outfit',
+          motion_description: gender === 'male' 
+            ? 'man stands still, turns around slowly 360 degrees to show full outfit, stands facing forward, confident posture, no adjusting clothes' 
+            : 'woman stands still, turns around slowly 360 degrees to show full outfit, stands facing forward, elegant posture, keeps hands at sides, no touching or adjusting clothes, no lifting or moving fabric',
           model: 'grok',
           duration_sec: 4
         })
@@ -162,18 +189,17 @@ export default function Home() {
   const handleRestart = () => {
     setStep('capture');
     setPersonImage('');
-    setGeneratedImage('');
     setGeneratedVideo('');
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
       {step === 'capture' && <CaptureScreen onCapture={handleCapture} />}
-      {step === 'select' && <SelectScreen onSelect={handleSelect} />}
+      {step === 'gender' && <GenderScreen onSelect={handleGenderSelect} />}
+      {step === 'select' && <SelectScreen gender={gender} onSelect={handleSelect} />}
       {step === 'loading' && <LoadingScreen message={loadingMessage} />}
       {step === 'result' && (
         <ResultScreen 
-          image={generatedImage}
           video={generatedVideo} 
           onRestart={handleRestart} 
         />

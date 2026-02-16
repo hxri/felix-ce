@@ -3,24 +3,24 @@
   "builds": [
     {
       "src": "app/backend/wsgi.py",
-      "use": "@vercel/python",
-      "config": {
-        "runtime": "python3.11",
-        "maxDuration": 900
-      }
+      "use": "@vercel/python"
     },
     {
       "src": "app/frontend/package.json",
       "use": "@vercel/next"
     }
   ],
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/(.*)",
-      "destination": "/app/backend/wsgi.py"
+      "src": "/api/(.*)",
+      "dest": "app/backend/wsgi.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "app/frontend/$1"
     }
   ],
   "env": {
-    "NEXT_PUBLIC_API_URL": ""
+    "NEXT_PUBLIC_API_URL": "https://felix-ce.vercel.app"
   }
 }

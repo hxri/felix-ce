@@ -4,21 +4,36 @@ import { useState } from 'react';
 import Image from 'next/image';
 
 interface SelectScreenProps {
+  gender: 'male' | 'female';
   onSelect: (selections: { top: string; bottom: string; background: string }) => void;
 }
 
-const OUTFIT_TOPS = [
+const OUTFIT_TOPS_MALE = [
   { id: 1, name: 'Blue T-Shirt', image: 'https://i.postimg.cc/Xqs7H0wD/blue_tshirt.png' },
   { id: 2, name: 'White Polo', image: 'https://i.postimg.cc/wx2vTDSp/white_polo.png' },
   { id: 3, name: 'Black Hoodie', image: 'https://i.postimg.cc/59g0N8ZW/black_hoodie.png' },
   { id: 4, name: 'Formal Shirt', image: 'https://i.postimg.cc/Wz5bWPM7/formal_shirt.png' },
 ];
 
-const OUTFIT_BOTTOMS = [
+const OUTFIT_TOPS_FEMALE = [
+  { id: 1, name: 'Pink Blouse', image: 'https://i.postimg.cc/B6GJ3b6b/pink_blouse.png' },
+  { id: 2, name: 'White Tank', image: 'https://i.postimg.cc/JnWR80n7/white_tank.png' },
+  { id: 3, name: 'Black Crop Top', image: 'https://i.postimg.cc/G21bRt2d/black_crop_top.png' },
+  { id: 4, name: 'Formal Dress', image: 'https://i.postimg.cc/V6czwvNh/formal_dress.png' },
+];
+
+const OUTFIT_BOTTOMS_MALE = [
   { id: 1, name: 'Khaki Shorts', image: 'https://i.postimg.cc/hjHHKZKB/khaki_shorts.png' },
   { id: 2, name: 'Black Jeans', image: 'https://i.postimg.cc/wvSS949K/black_jeans.png' },
   { id: 3, name: 'Navy Chinos', image: 'https://i.postimg.cc/4drrX2XT/navy_chinos.png' },
   { id: 4, name: 'Running Shorts', image: 'https://i.postimg.cc/bJG7cfcx/running_shorts.png' },
+];
+
+const OUTFIT_BOTTOMS_FEMALE = [
+  { id: 1, name: 'Denim Shorts', image: 'https://i.postimg.cc/LXMmS5sc/denim_shorts.png' },
+  { id: 2, name: 'Black Skirt', image: 'https://i.postimg.cc/9Mjc20fS/black_skirt.png' },
+  { id: 3, name: 'Casual Leggings', image: 'https://i.postimg.cc/V6czwvNH/casual_leggings.png' },
+  { id: 4, name: 'Summer Dress', image: 'https://i.postimg.cc/0NS9hD9J/summer_dress.png' },
 ];
 
 const BACKGROUNDS = [
@@ -28,11 +43,14 @@ const BACKGROUNDS = [
   { id: 4, name: 'Studio', description: 'Clean professional studio' },
 ];
 
-export default function SelectScreen({ onSelect }: SelectScreenProps) {
+export default function SelectScreen({ gender, onSelect }: SelectScreenProps) {
   const [selectedTop, setSelectedTop] = useState<string>('');
   const [selectedBottom, setSelectedBottom] = useState<string>('');
   const [selectedBg, setSelectedBg] = useState<string>('');
   const [step, setStep] = useState<'top' | 'bottom' | 'bg'>('top');
+
+  const TOPS = gender === 'male' ? OUTFIT_TOPS_MALE : OUTFIT_TOPS_FEMALE;
+  const BOTTOMS = gender === 'male' ? OUTFIT_BOTTOMS_MALE : OUTFIT_BOTTOMS_FEMALE;
 
   const handleNext = () => {
     if (step === 'top' && selectedTop) {
@@ -66,9 +84,9 @@ export default function SelectScreen({ onSelect }: SelectScreenProps) {
         {step === 'top' && (
           <>
             <h2 className="text-2xl font-bold text-white mb-2">Select Top Wear</h2>
-            <p className="text-slate-400 mb-6">Choose a shirt or top</p>
+            <p className="text-slate-400 mb-6">Choose a {gender === 'male' ? 'shirt or top' : 'top or blouse'}</p>
             <div className="grid grid-cols-2 gap-4 mb-6">
-              {OUTFIT_TOPS.map(top => (
+              {TOPS.map(top => (
                 <button
                   key={top.id}
                   onClick={() => setSelectedTop(top.name)}
@@ -85,7 +103,6 @@ export default function SelectScreen({ onSelect }: SelectScreenProps) {
                       fill
                       className="object-cover"
                       onError={(e) => {
-                        // Fallback if image doesn't exist
                         e.currentTarget.style.display = 'none';
                       }}
                     />
@@ -100,9 +117,9 @@ export default function SelectScreen({ onSelect }: SelectScreenProps) {
         {step === 'bottom' && (
           <>
             <h2 className="text-2xl font-bold text-white mb-2">Select Bottom Wear</h2>
-            <p className="text-slate-400 mb-6">Choose pants or shorts</p>
+            <p className="text-slate-400 mb-6">Choose {gender === 'male' ? 'pants or shorts' : 'skirt, pants or shorts'}</p>
             <div className="grid grid-cols-2 gap-4 mb-6">
-              {OUTFIT_BOTTOMS.map(bottom => (
+              {BOTTOMS.map(bottom => (
                 <button
                   key={bottom.id}
                   onClick={() => setSelectedBottom(bottom.name)}
